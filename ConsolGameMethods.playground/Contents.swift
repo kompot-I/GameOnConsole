@@ -51,11 +51,13 @@ class Player {
     var x: Int
     var y: Int
     let room: Room
+    let box: Box
     
-    init(x: Int, y: Int, room: Room){
+    init(x: Int, y: Int, room: Room, box: Box){
         self.x = x
         self.y = y
         self.room = room
+        self.box = box
         
         room.roomArray[x][y] = GameObject.hero
     }
@@ -89,26 +91,106 @@ class Player {
             newX += 1
         }
         
-        if room.roomArray[newY][newX] == GameObject.map {
+        if room.roomArray[newY][newX] == GameObject.map || (room.roomArray[newY][newX] == GameObject.box && box.move(direction: direction)){
+            
             room.roomArray[y][x] = GameObject.map
             room.roomArray[newY][newX] = GameObject.hero
             x = newX
             y = newY
             return true
         }
+        
+        if room.roomArray[newY][newX] == GameObject.finish {
+            print("Congratulations. You stole The Statue of Liberty !")
+        }
         return false
     }
 }
 
+class Box {
+    var x: Int
+    var y: Int
+    let finishX: Int
+    let finishY: Int
+    let room: Room
+    
+    init(x: Int, y: Int, finishX: Int, finishY: Int, room: Room){
+        self.x = x
+        self.y = y
+        self.finishX = finishX
+        self.finishY = finishY
+        self.room = room
+        
+        room.roomArray[y][x] = GameObject.box
+        room.roomArray[finishY][finishX] = GameObject.finish
+    }
+    
+    func isFinish() -> Bool {
+        if x == finishX && y == finishY {
+            room.roomArray[y][x] == .finish
+            print("Finish")
+            return true
+        }
+        return false
+    }
+        
+    func move(direction: Direction) -> Bool {
+        
+        if isFinish() {
+            print("Finish - over")
+            return false
+        }
+        
+        print("tSoL move: ", direction.rawValue)
+        var newX = x
+        var newY = y
+        
+        switch direction {
+        case .up:
+            if y <= 0 {
+                return false
+            }
+            newY -= 1
+        case .down:
+            if y >= room.height - 1 {
+                return false
+            }
+            newY += 1
+            
+        case .left:
+            if x <= 0 {
+                return false
+            }
+            newX -= 1
+        case .right:
+            if x >= room.width - 1 {
+                return false
+            }
+            newX += 1
+        }
+        
+        if newX != x || newY != y {
+            room.roomArray[y][x] = GameObject.map
+            room.roomArray[newY][newX] = GameObject.box
+            x = newX
+            y = newY
+        }
+        
+        isFinish()
+        return true
+    }
+}
+
 let room = Room(width: 7, height: 7)
-let player = Player(x: 0, y: 0, room: room)
+let box = Box(x: 5, y: 1, finishX: 5, finishY: 5, room: room)
+let player = Player(x: 0, y: 0, room: room, box: box)
+
 room.showRoom()
 
 let moveArray: [Direction]
-moveArray = [.right, .down, .down, .right]
+moveArray = [.down, .right, .right, .right, .right, .up, .right, .down, .down, .down, .down]
 
 for direction in moveArray {
     player.move(direction: direction)
-    
     room.showRoom()
 }
